@@ -4,12 +4,12 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:4000',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
     },
   },
 
-  compatibilityDate: '2025-07-15',
-  css: ['~/assets/css/main.css'],
+  compatibilityDate: "2025-07-15",
+  css: ["~/assets/css/main.css"],
   devtools: { enabled: true },
   postcss: {
     plugins: {
@@ -17,5 +17,5 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  modules: ['@nuxtjs/tailwindcss']
-})
+  modules: ["@nuxtjs/tailwindcss"],
+});
