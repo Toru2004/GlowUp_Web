@@ -1,6 +1,8 @@
 export const productApi = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBaseUrl;
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
   const getProducts = async () => {
     const res: any = await $fetch(`${baseURL}/products`);
@@ -35,11 +37,57 @@ export const productApi = () => {
     return res.data || res;
   };
 
+  const getProductsByCat = async (categoryId: number) => {
+    return await $fetch<any[]>(`${baseURL}/products/category/${categoryId}`);
+  };
+
+  // Lấy sản phẩm chưa có danh mục
+  const getUnassignedProducts = async () => {
+    return await $fetch<any[]>(`${baseURL}/products/unassigned`);
+  };
+
+  // Gán danh sách sản phẩm vào danh mục
+  const assignProducts = async (categoryId: number, productIds: number[]) => {
+    loading.value = true;
+    try {
+      await $fetch(`${baseURL}/products/category/${categoryId}`, {
+        method: "POST",
+        body: { productIds },
+      });
+    } catch (err: any) {
+      error.value = err.data?.message || "Không thể thêm sản phẩm";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Gỡ sản phẩm khỏi danh mục
+  const removeProductFromCat = async (
+    categoryId: number,
+    productId: number
+  ) => {
+    try {
+      await $fetch(`${baseURL}/products/category/${categoryId}/${productId}`, {
+        method: "DELETE",
+      });
+    } catch (err: any) {
+      error.value = err.data?.message || "Không thể gỡ sản phẩm";
+      throw err;
+    }
+  };
+
   return {
     getProducts,
     getProductById,
     createProduct,
     updateProduct,
     deleteProduct,
+    loading,
+    error,
+    getProductsByCat,
+    getUnassignedProducts,
+    assignProducts,
+    removeProductFromCat,
   };
 };
