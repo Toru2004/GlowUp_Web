@@ -27,7 +27,7 @@ export const useAuth = () => {
     return res;
   };
   const signup = async (data: {
-    name: string;
+    full_name: string;
     email: string;
     password: string;
   }) => {
