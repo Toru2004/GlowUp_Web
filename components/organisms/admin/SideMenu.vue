@@ -54,7 +54,7 @@ const menuItems = [
   },
   {
     label: "Khuyến mãi",
-    path: "/admin/promotions",
+    path: "/admin/vouchers",
     icon: Tag,
     description: "Mã giảm giá & ưu đãi",
   },
