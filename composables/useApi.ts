@@ -7,32 +7,46 @@ export const useApi = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBaseUrl;
 
+  const getAuthHeaders = (): HeadersInit => {
+    if (process.client) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        return {
+          Authorization: `Bearer ${token}`,
+        };
+      }
+    }
+    return {};
+  };
+
   const getUsers = async () => {
-    const res: any = await $fetch(`${baseURL}/users`);
+    const res: any = await $fetch(`${baseURL}/users`, {
+      headers: getAuthHeaders(),
+    });
     return res.data || res;
   };
 
   const createUser = async (data: any) => {
-    const res: any = await $fetch(`${baseURL}/users/create-user`, {
+    return await $fetch(`${baseURL}/users/create-user`, {
       method: "POST",
       body: data,
+      headers: getAuthHeaders(),
     });
-    return res;
   };
 
   const updateUser = async (id: number, data: any) => {
-    const res: any = await $fetch(`${baseURL}/users/update-user/${id}`, {
+    return await $fetch(`${baseURL}/users/update-user/${id}`, {
       method: "PUT",
       body: data,
+      headers: getAuthHeaders(),
     });
-    return res;
   };
 
   const deleteUser = async (id: number) => {
-    const res: any = await $fetch(`${baseURL}/users/delete-user/${id}`, {
+    return await $fetch(`${baseURL}/users/delete-user/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
-    return res;
   };
 
   return { getUsers, createUser, updateUser, deleteUser };

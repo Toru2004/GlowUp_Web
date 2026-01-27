@@ -8,7 +8,7 @@ const isMenuOpen = ref(false);
 const toggleMenu = () => (isMenuOpen.value = !isMenuOpen.value);
 
 const displayName = computed(() => {
-  return user.value?.name || user.value?.email || "User";
+  return user.value?.full_name || user.value?.email || "User";
 });
 
 const navLinks = [
