@@ -17,7 +17,27 @@ const sortBy = ref("featured");
 const priceRange = ref({ min: "", max: "" });
 const products = ref<Product[]>([]);
 const { getProducts } = productApi();
+const { addToCart } = useCart();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
+const addingToCartId = ref<number | null>(null);
+
+const handleQuickAddToCart = async (product: Product) => {
+  if (typeof product.id !== "number") {
+    console.error("Invalid product id", product.id);
+    return;
+  }
+
+  addingToCartId.value = product.id;
+  try {
+    await addToCart(product.id, 1);
+    alert(`Đã thêm ${product.name} vào giỏ hàng!`);
+  } catch (error) {
+    console.error("Failed to add to cart:", error);
+    alert("Có lỗi xảy ra khi thêm vào giỏ hàng.");
+  } finally {
+    addingToCartId.value = null;
+  }
+};
 
 onMounted(async () => {
   try {
@@ -138,11 +158,18 @@ const formatPrice = (price: number) => {
                 </div>
 
                 <div class="card-actions">
-                  <button class="btn-action btn-wishlist">
+                  <button class="btn-action btn-wishlist" @click.prevent="">
                     <Heart :size="20" />
                   </button>
-                  <button class="btn-action btn-add-cart">
-                    <ShoppingBag :size="18" style="margin-right: 6px" /> Thêm
+                  <button 
+                    class="btn-action btn-add-cart" 
+                    @click.prevent="handleQuickAddToCart(product)"
+                    :disabled="addingToCartId === product.id"
+                  >
+                    <template v-if="addingToCartId !== product.id">
+                      <ShoppingBag :size="18" style="margin-right: 6px" /> Thêm
+                    </template>
+                    <div class="spinner-small" v-else></div>
                   </button>
                 </div>
               </div>
@@ -209,6 +236,19 @@ const formatPrice = (price: number) => {
   --radius: 12px;
   --font-serif: "Merriweather", serif;
   --font-sans: "Inter", sans-serif;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .shop-page {

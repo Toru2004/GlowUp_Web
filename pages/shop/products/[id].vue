@@ -14,12 +14,29 @@ import {
 } from "lucide-vue-next";
 
 const route = useRoute();
+const { addToCart } = useCart();
 const product = ref<any>(null);
 const relatedProducts = ref<any[]>([]);
 const reviews = ref<any[]>([]);
 const selectedImage = ref("");
 const quantity = ref(1);
 const loading = ref(true);
+const addingToCart = ref(false);
+
+const handleAddToCart = async () => {
+  if (!product.value) return;
+  addingToCart.value = true;
+  try {
+    await addToCart(product.value.id, quantity.value);
+    // You could add a success message/toast here
+    alert("Đã thêm vào giỏ hàng!");
+  } catch (error) {
+    console.error("Failed to add to cart:", error);
+    alert("Có lỗi xảy ra khi thêm vào giỏ hàng.");
+  } finally {
+    addingToCart.value = false;
+  }
+};
 
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
@@ -185,9 +202,14 @@ const decreaseQty = () => {
               <button @click="increaseQty"><Plus :size="16" /></button>
             </div>
 
-            <button class="btn-add-cart">
-              <ShoppingBag :size="20" />
-              <span>Thêm vào giỏ hàng</span>
+            <button 
+              class="btn-add-cart" 
+              @click="handleAddToCart"
+              :disabled="addingToCart"
+            >
+              <ShoppingBag :size="20" v-if="!addingToCart" />
+              <div class="spinner-small" v-else></div>
+              <span>{{ addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}</span>
             </button>
 
             <button class="btn-wish"><Heart :size="22" /></button>
@@ -319,6 +341,19 @@ const decreaseQty = () => {
   --border: #e5e7eb;
   --font-serif: "Merriweather", serif;
   --font-sans: "Inter", sans-serif;
+}
+
+.spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .page-wrapper {
