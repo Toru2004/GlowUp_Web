@@ -14,6 +14,8 @@ import {
 } from "lucide-vue-next";
 
 const route = useRoute();
+const { isAuthenticated } = useAuth();
+const { showNotification } = useNotification();
 const { addToCart } = useCart();
 const product = ref<any>(null);
 const relatedProducts = ref<any[]>([]);
@@ -24,15 +26,19 @@ const loading = ref(true);
 const addingToCart = ref(false);
 
 const handleAddToCart = async () => {
+  if (!isAuthenticated.value) {
+    navigateTo("/auth/login");
+    return;
+  }
   if (!product.value) return;
   addingToCart.value = true;
   try {
     await addToCart(product.value.id, quantity.value);
     // You could add a success message/toast here
-    alert("Đã thêm vào giỏ hàng!");
+    showNotification("Thành công", "Đã thêm sản phẩm vào giỏ hàng!", "success");
   } catch (error) {
     console.error("Failed to add to cart:", error);
-    alert("Có lỗi xảy ra khi thêm vào giỏ hàng.");
+    showNotification("Lỗi", "Có lỗi xảy ra khi thêm vào giỏ hàng.", "error");
   } finally {
     addingToCart.value = false;
   }

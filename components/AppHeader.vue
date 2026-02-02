@@ -19,6 +19,14 @@ const navLinks = [
   { name: "Liên Hệ", path: "/contact" },
   { name: "Admin", path: "/admin/dashboard" },
 ];
+
+const goToCart = () => {
+  if (!isAuthenticated.value) {
+    navigateTo("/auth/login");
+  } else {
+    navigateTo("/cart");
+  }
+};
 </script>
 
 <template>
@@ -79,8 +87,8 @@ const navLinks = [
             <Search class="w-5 h-5" />
           </button>
 
-          <NuxtLink
-            to="/cart"
+          <button
+            @click="goToCart"
             class="relative hover:text-glow-primary-600 transition-colors"
           >
             <ShoppingBag class="w-5 h-5" />
@@ -90,7 +98,7 @@ const navLinks = [
             >
               {{ cartCount }}
             </span>
-          </NuxtLink>
+          </button>
 
           <!-- Mobile Menu -->
           <button

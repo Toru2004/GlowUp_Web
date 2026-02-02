@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ShoppingBag, Trash2, Minus, Plus, ArrowLeft } from "lucide-vue-next";
-import { useCart } from "~/composables/useCart";
+import { useCart } from "@/composables/useCart";
 
+const { showNotification } = useNotification();
+const { user, isAuthenticated } = useAuth();
 const { cart, loading, fetchCart, removeItem, clearCart, updateQuantity } = useCart();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
 onMounted(() => {
+  if (!isAuthenticated.value) {
+    navigateTo("/auth/login");
+    return;
+  }
   fetchCart();
 });
 
@@ -18,8 +24,9 @@ const handleRemoveItem = async (itemId: number) => {
   if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?")) {
     try {
       await removeItem(itemId);
+      showNotification("Thành công", "Đã xóa sản phẩm khỏi giỏ hàng.", "success");
     } catch (error) {
-      alert("Không thể xóa sản phẩm. Vui lòng thử lại.");
+      showNotification("Lỗi", "Không thể xóa sản phẩm. Vui lòng thử lại.", "error");
     }
   }
 };
@@ -28,8 +35,9 @@ const handleClearCart = async () => {
   if (confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?")) {
     try {
       await clearCart();
+      showNotification("Thành công", "Đã làm trống giỏ hàng.", "success");
     } catch (error) {
-      alert("Không thể làm trống giỏ hàng. Vui lòng thử lại.");
+      showNotification("Lỗi", "Không thể làm trống giỏ hàng. Vui lòng thử lại.", "error");
     }
   }
 };
@@ -39,7 +47,7 @@ const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
   try {
     await updateQuantity(itemId, newQuantity);
   } catch (error) {
-    alert("Không thể cập nhật số lượng. Vui lòng thử lại.");
+    showNotification("Lỗi", "Không thể cập nhật số lượng. Vui lòng thử lại.", "error");
   }
 };
 
@@ -182,19 +190,8 @@ const getImageUrl = (imgName: string) => {
             </div>
 
             <button class="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all transform hover:-translate-y-1 shadow-lg">
-              Thanh toán ngay
+              Mua hàng ({{ cart.total_quantity }})
             </button>
-
-            <div class="mt-6 flex flex-col gap-3">
-              <p class="text-xs text-center text-gray-400">
-                Chấp nhận các phương thức thanh toán
-              </p>
-              <div class="flex justify-center gap-3 opacity-50 grayscale hover:grayscale-0 transition-all cursor-default">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" class="h-4" />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" class="h-4" />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" class="h-4" />
-              </div>
-            </div>
           </div>
         </div>
       </div>

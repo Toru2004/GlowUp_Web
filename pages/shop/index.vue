@@ -17,11 +17,17 @@ const sortBy = ref("featured");
 const priceRange = ref({ min: "", max: "" });
 const products = ref<Product[]>([]);
 const { getProducts } = productApi();
+const { isAuthenticated } = useAuth();
 const { addToCart } = useCart();
+const { showNotification } = useNotification();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 const addingToCartId = ref<number | null>(null);
 
 const handleQuickAddToCart = async (product: Product) => {
+  if (!isAuthenticated.value) {
+    navigateTo("/auth/login");
+    return;
+  }
   if (typeof product.id !== "number") {
     console.error("Invalid product id", product.id);
     return;
@@ -30,10 +36,10 @@ const handleQuickAddToCart = async (product: Product) => {
   addingToCartId.value = product.id;
   try {
     await addToCart(product.id, 1);
-    alert(`Đã thêm ${product.name} vào giỏ hàng!`);
+    showNotification("Thành công", `Đã thêm ${product.name} vào giỏ hàng!`, "success");
   } catch (error) {
     console.error("Failed to add to cart:", error);
-    alert("Có lỗi xảy ra khi thêm vào giỏ hàng.");
+    showNotification("Lỗi", "Có lỗi xảy ra khi thêm vào giỏ hàng.", "error");
   } finally {
     addingToCartId.value = null;
   }
