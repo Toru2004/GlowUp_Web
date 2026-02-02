@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useCategory } from "../../../composables/useCategories";
-import { productApi } from "../../../composables/productApi";
+import { productApi } from "../../../composables/useProduct";
 import type { Category } from "../../../@type/category";
 import type { Product } from "../../../@type/product";
 

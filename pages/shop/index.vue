@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { productApi } from "../../composables/productApi";
+import { productApi } from "../../composables/useProduct";
 import type { Product } from "../../@type/product";
 import {
   Search,
