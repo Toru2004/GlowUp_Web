@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { productApi } from "../../composables/productApi";
+import { ref, onMounted, computed } from "vue";
+import { productApi } from "../../composables/useProduct";
+import { useCategory } from "../../composables/useCategories";
 import type { Product } from "../../@type/product";
 import ShopHero from "@/components/shop/ShopHero.vue";
 import ShopSidebar from "@/components/shop/ShopSidebar.vue";
@@ -8,25 +9,22 @@ import ShopToolbar from "@/components/shop/ShopToolbar.vue";
 import ProductCard from "@/components/shop/ProductCard.vue";
 import ShopPagination from "@/components/shop/ShopPagination.vue";
 
-const selectedCategory = ref("Tất cả");
 const sortBy = ref("featured");
 const searchQuery = ref("");
 const priceRange = ref({ min: "", max: "" });
+
 const products = ref<Product[]>([]);
+const selectedCategory = ref<number | null>(null);
+const searchKeyword = ref("");
+
 const { getProducts } = productApi();
 const { isAuthenticated } = useAuth();
 const { addToCart } = useCart();
 const { showNotification } = useNotification();
+const { categories, getAll } = useCategory();
+
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 const addingToCartId = ref<number | null>(null);
-
-const categories = [
-  "Tất cả",
-  "Chăm Sóc Da",
-  "Trang Điểm",
-  "Nước Hoa",
-  "Body Care",
-];
 
 const handleQuickAddToCart = async (product: Product) => {
   if (!isAuthenticated.value) {
@@ -57,19 +55,32 @@ const handleApplyPrice = () => {
 
 onMounted(async () => {
   try {
-    const data = await getProducts();
-    products.value = data;
+    await getAll();
+    products.value = await getProducts();
   } catch (err) {
-    console.error("Lỗi lấy danh sách sản phẩm:", err);
+    console.error("Lỗi load dữ liệu:", err);
   }
 });
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("vi-VN", {
+const filteredProducts = computed(() => {
+  return products.value.filter((p) => {
+    // filter theo category
+    const matchCategory =
+      selectedCategory.value === null ||
+      p.category_id === selectedCategory.value;
+    const matchKeyword = p.name
+      .toLowerCase()
+      .includes(searchKeyword.value.toLowerCase());
+
+    return matchCategory && matchKeyword;
+  });
+});
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
   }).format(price);
-};
 </script>
 
 <template>
@@ -84,6 +95,8 @@ const formatPrice = (price: number) => {
           v-model:searchQuery="searchQuery"
           :categories="categories"
           @applyPrice="handleApplyPrice"
+          @update:selectedCategory="(catId) => selectedCategory = catId"
+          @update:searchQuery="(query) => searchKeyword = query"
         />
 
         <main class="flex-1">
@@ -94,7 +107,7 @@ const formatPrice = (price: number) => {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12">
             <ProductCard 
-              v-for="product in products"
+              v-for="product in filteredProducts"
               :key="product.id"
               :product="product"
               :addingToCartId="addingToCartId"

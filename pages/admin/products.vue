@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
-import { productApi } from "../../composables/productApi";
+import { productApi } from "../../composables/useProduct";
 import type { Product } from "../../@type/product";
+import { useCategory } from "../../composables/useCategories";
 
 definePageMeta({
   layout: "admin",
@@ -13,6 +14,8 @@ const loading = ref(true);
 const showModal = ref(false);
 const submitting = ref(false);
 const editingId = ref<number | string | null>(null);
+const categoryApi = useCategory();
+const { categories } = categoryApi;
 
 const form = reactive({
   name: "",
@@ -21,6 +24,7 @@ const form = reactive({
   price: 0,
   quantity: 0,
   description: "",
+  category_id: "",
 });
 
 // File upload state
@@ -96,7 +100,7 @@ const openModal = (product?: Product) => {
     form.price = product.price;
     form.quantity = product.quantity || 0;
     form.description = product.description;
-
+    form.category_id = product.category_id?.toString() ?? "";
     currentImages.value = Array.isArray(product.images) ? product.images : [];
   } else {
     editingId.value = null;
@@ -129,6 +133,7 @@ const handleSubmit = async () => {
     formData.append("price", String(form.price));
     formData.append("quantity", String(form.quantity));
     formData.append("description", form.description);
+    formData.append("category_id", String(form.category_id));
 
     selectedFiles.value.forEach((file) => formData.append("images", file));
 
@@ -145,6 +150,11 @@ const handleSubmit = async () => {
       showToast("Thêm sản phẩm thành công", "success");
     }
 
+    if (!form.category_id) {
+      showToast("Vui lòng chọn danh mục", "error");
+      submitting.value = false;
+      return;
+    }
     showModal.value = false;
     await fetchProducts();
   } catch (err) {
@@ -157,6 +167,7 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   fetchProducts();
+  categoryApi.getAll();
 });
 </script>
 
@@ -378,6 +389,15 @@ onMounted(() => {
                 />
               </div>
             </div>
+          </div>
+          <div class="form-group">
+            <label>Danh mục <span class="text-red-500">*</span></label>
+            <select v-model="form.category_id" class="input">
+              <option value="">-- Chọn danh mục --</option>
+              <option v-for="c in categories" :key="c.id" :value="c.id">
+                {{ c.name }}
+              </option>
+            </select>
           </div>
 
           <div class="form-group">

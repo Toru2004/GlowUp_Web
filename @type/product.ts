@@ -7,4 +7,5 @@ export interface Product {
   quantity: number;
   description: string;
   images: string[] | string;
+  category_id?: number | string;
 }

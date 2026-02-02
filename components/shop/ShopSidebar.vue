@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import { Search } from "lucide-vue-next";
+import type { Category } from "@/@type/category";
 
 const props = defineProps<{
-  categories: string[];
-  selectedCategory: string;
+  // categories: string[];
+  categories: Category[];
+  selectedCategory: number | null;
   priceRange: { min: string; max: string };
   searchQuery: string;
 }>();
 
 const emit = defineEmits<{
-  "update:selectedCategory": [value: string];
+  "update:selectedCategory": [value: number];
   "update:priceRange": [value: { min: string; max: string }];
   "update:searchQuery": [value: string];
   applyPrice: [];
 }>();
 
-const handleCategorySelect = (cat: string) => {
-  emit("update:selectedCategory", cat);
+const handleCategorySelect = (cat: Category) => {
+  emit("update:selectedCategory", cat.id);
 };
 
 const handleSearchInput = (event: Event) => {
@@ -50,18 +52,18 @@ const handlePriceApply = () => {
         <div class="space-y-2">
           <button 
             v-for="cat in categories" 
-            :key="cat"
+            :key="cat.id"
             @click="handleCategorySelect(cat)"
             :class="[
               'w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-300 group',
-              selectedCategory === cat 
+              selectedCategory === cat.id 
                 ? 'bg-white shadow-md text-glow-primary-600 font-bold' 
                 : 'text-gray-500 hover:bg-white hover:shadow-sm hover:text-gray-900'
             ]"
           >
-            <span class="text-sm tracking-wide">{{ cat }}</span>
+            <span class="text-sm tracking-wide">{{ cat.name }}</span>
             <div 
-              v-if="selectedCategory === cat" 
+              v-if="selectedCategory === cat.id" 
               class="w-1.5 h-1.5 rounded-full bg-glow-primary-500 animate-pulse"
             ></div>
           </button>
