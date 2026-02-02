@@ -8,6 +8,9 @@ import ShopSidebar from "@/components/shop/ShopSidebar.vue";
 import ShopToolbar from "@/components/shop/ShopToolbar.vue";
 import ProductCard from "@/components/shop/ProductCard.vue";
 import ShopPagination from "@/components/shop/ShopPagination.vue";
+import { useAuth } from "@/composables/useAuth";
+import { useCart } from "@/composables/useCart";
+import { useNotification } from "@/composables/useNotification";
 
 const sortBy = ref("featured");
 const searchQuery = ref("");
@@ -39,7 +42,11 @@ const handleQuickAddToCart = async (product: Product) => {
   addingToCartId.value = product.id;
   try {
     await addToCart(product.id, 1);
-    showNotification("Thành công", `Đã thêm ${product.name} vào giỏ hàng!`, "success");
+    showNotification(
+      "Thành công",
+      `Đã thêm ${product.name} vào giỏ hàng!`,
+      "success"
+    );
   } catch (error) {
     console.error("Failed to add to cart:", error);
     showNotification("Lỗi", "Có lỗi xảy ra khi thêm vào giỏ hàng.", "error");
@@ -75,12 +82,6 @@ const filteredProducts = computed(() => {
     return matchCategory && matchKeyword;
   });
 });
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(price);
 </script>
 
 <template>
@@ -89,24 +90,23 @@ const formatPrice = (price: number) =>
 
     <div class="container mx-auto px-4 pb-24">
       <div class="flex flex-col lg:flex-row gap-12">
-        <ShopSidebar 
+        <ShopSidebar
           v-model:selectedCategory="selectedCategory"
           v-model:priceRange="priceRange"
           v-model:searchQuery="searchQuery"
           :categories="categories"
           @applyPrice="handleApplyPrice"
-          @update:selectedCategory="(catId) => selectedCategory = catId"
-          @update:searchQuery="(query) => searchKeyword = query"
+          @update:selectedCategory="(catId) => (selectedCategory = catId)"
+          @update:searchQuery="(query) => (searchKeyword = query)"
         />
 
         <main class="flex-1">
-          <ShopToolbar 
-            :count="products.length"
-            v-model:sortBy="sortBy"
-          />
+          <ShopToolbar :count="products.length" v-model:sortBy="sortBy" />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12">
-            <ProductCard 
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12"
+          >
+            <ProductCard
               v-for="product in filteredProducts"
               :key="product.id"
               :product="product"
@@ -116,10 +116,12 @@ const formatPrice = (price: number) =>
             />
           </div>
 
-          <ShopPagination 
+          <ShopPagination
             :currentPage="1"
             :totalPages="3"
-            @update:currentPage="(page) => console.log('Page changed to:', page)"
+            @update:currentPage="
+              (page) => console.log('Page changed to:', page)
+            "
           />
         </main>
       </div>
@@ -128,5 +130,5 @@ const formatPrice = (price: number) =>
 </template>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap");
 </style>

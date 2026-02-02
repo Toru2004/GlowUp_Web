@@ -5,6 +5,9 @@ import ProductGallery from "@/components/product/ProductGallery.vue";
 import ProductInfo from "@/components/product/ProductInfo.vue";
 import ProductReviewSection from "@/components/product/ProductReviewSection.vue";
 import RelatedProducts from "@/components/product/RelatedProducts.vue";
+import { useNotification } from "@/composables/useNotification";
+import { useAuth } from "@/composables/useAuth";
+import { useCart } from "@/composables/useCart";
 
 const route = useRoute();
 const { isAuthenticated } = useAuth();
