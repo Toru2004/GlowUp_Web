@@ -2,6 +2,12 @@
 const props = defineProps<{
   totalQuantity: number;
   totalPrice: number;
+  selectedCount: number;
+  hasSelection: boolean;
+}>();
+
+const emit = defineEmits<{
+  checkout: [];
 }>();
 
 const formatPrice = (price: number) =>
@@ -14,7 +20,11 @@ const formatPrice = (price: number) =>
     
     <div class="space-y-4 mb-6">
       <div class="flex justify-between text-gray-600">
-        <span>Số lượng sản phẩm</span>
+        <span>Sản phẩm đã chọn</span>
+        <span class="font-medium text-gray-900">{{ selectedCount }}</span>
+      </div>
+      <div class="flex justify-between text-gray-600">
+        <span>Tổng số lượng</span>
         <span class="font-medium text-gray-900">{{ totalQuantity }}</span>
       </div>
       <div class="flex justify-between text-gray-600">
@@ -34,8 +44,17 @@ const formatPrice = (price: number) =>
       </div>
     </div>
 
-    <button class="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all transform hover:-translate-y-1 shadow-lg">
-      Mua hàng ({{ totalQuantity }})
+    <button 
+      @click="emit('checkout')"
+      :disabled="!hasSelection"
+      :class="[
+        'w-full py-4 font-bold rounded-xl transition-all shadow-lg',
+        hasSelection
+          ? 'bg-gray-900 text-white hover:bg-gray-800 transform hover:-translate-y-1 cursor-pointer'
+          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+      ]"
+    >
+      {{ hasSelection ? `Mua hàng (${totalQuantity})` : 'Chọn sản phẩm để mua' }}
     </button>
   </div>
 </template>
