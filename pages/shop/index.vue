@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { productApi } from "../../composables/useProduct";
+import { useCategory } from "../../composables/useCategories";
 import type { Product } from "../../@type/product";
+
 import {
   Search,
   Star,
@@ -12,36 +14,46 @@ import {
   SlidersHorizontal,
 } from "lucide-vue-next";
 
-const selectedCategory = ref("Tất cả");
 const sortBy = ref("featured");
 const priceRange = ref({ min: "", max: "" });
+
 const products = ref<Product[]>([]);
+const selectedCategory = ref<number | null>(null);
+const searchKeyword = ref("");
+
 const { getProducts } = productApi();
+const { categories, getAll } = useCategory();
+
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
 onMounted(async () => {
   try {
-    const data = await getProducts();
-    products.value = data;
+    await getAll();
+    products.value = await getProducts();
   } catch (err) {
-    console.error("Lỗi lấy danh sách sản phẩm:", err);
+    console.error("Lỗi load dữ liệu:", err);
   }
 });
 
-const categories = [
-  "Tất cả",
-  "Chăm Sóc Da",
-  "Trang Điểm",
-  "Nước Hoa",
-  "Body Care",
-];
+const filteredProducts = computed(() => {
+  return products.value.filter((p) => {
+    // filter theo category
+    const matchCategory =
+      selectedCategory.value === null ||
+      p.category_id === selectedCategory.value;
+    const matchKeyword = p.name
+      .toLowerCase()
+      .includes(searchKeyword.value.toLowerCase());
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("vi-VN", {
+    return matchCategory && matchKeyword;
+  });
+});
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
   }).format(price);
-};
 </script>
 
 <template>
@@ -61,7 +73,11 @@ const formatPrice = (price: number) => {
       <aside class="sidebar">
         <div class="sidebar-section">
           <div class="search-box">
-            <input type="text" placeholder="Tìm kiếm..." />
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              v-model="searchKeyword"
+            />
             <button class="search-btn">
               <Search :size="18" />
             </button>
@@ -71,20 +87,31 @@ const formatPrice = (price: number) => {
         <div class="sidebar-section">
           <h3 class="filter-title">Danh Mục</h3>
           <ul class="category-list">
+            <li :class="{ active: selectedCategory === null }">
+              <label>
+                <input
+                  type="radio"
+                  name="category"
+                  :value="null"
+                  v-model="selectedCategory"
+                />
+                <span class="cat-name">Tất cả</span>
+              </label>
+            </li>
+
             <li
               v-for="cat in categories"
-              :key="cat"
-              :class="{ active: selectedCategory === cat }"
+              :key="cat.id"
+              :class="{ active: selectedCategory === cat.id }"
             >
               <label>
                 <input
                   type="radio"
                   name="category"
-                  :value="cat"
+                  :value="cat.id"
                   v-model="selectedCategory"
                 />
-                <span class="cat-name">{{ cat }}</span>
-                <span class="check-icon" v-if="selectedCategory === cat"></span>
+                <span class="cat-name">{{ cat.name }}</span>
               </label>
             </li>
           </ul>
@@ -120,7 +147,7 @@ const formatPrice = (price: number) => {
 
         <div class="product-grid">
           <div
-            v-for="product in products"
+            v-for="product in filteredProducts"
             :key="product.id"
             class="product-card group"
           >
