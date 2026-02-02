@@ -11,5 +11,8 @@
     </main>
     
     <AppFooter />
+    
+    <!-- Global Notification Modal -->
+    <BaseNotification />
   </div>
 </template>

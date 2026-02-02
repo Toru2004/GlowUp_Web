@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { Search, ShoppingBag, User, Menu, X, LogOut } from "lucide-vue-next";
 
 const { user, isAuthenticated, logout } = useAuth();
+const { cartCount } = useCart();
 
 const isMenuOpen = ref(false);
 const toggleMenu = () => (isMenuOpen.value = !isMenuOpen.value);
@@ -18,6 +19,14 @@ const navLinks = [
   { name: "Liên Hệ", path: "/contact" },
   { name: "Admin", path: "/admin/dashboard" },
 ];
+
+const goToCart = () => {
+  if (!isAuthenticated.value) {
+    navigateTo("/auth/login");
+  } else {
+    navigateTo("/cart");
+  }
+};
 </script>
 
 <template>
@@ -79,13 +88,15 @@ const navLinks = [
           </button>
 
           <button
+            @click="goToCart"
             class="relative hover:text-glow-primary-600 transition-colors"
           >
             <ShoppingBag class="w-5 h-5" />
             <span
+              v-if="cartCount > 0"
               class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-glow-primary-500 text-[10px] font-bold text-white"
             >
-              0
+              {{ cartCount }}
             </span>
           </button>
 

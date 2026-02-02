@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useCategory } from "../../../composables/useCategories";
 import { productApi } from "../../../composables/productApi";
+import { useNotification } from "../../../composables/useNotification";
 import type { Category } from "../../../@type/category";
 import type { Product } from "../../../@type/product";
 
@@ -19,6 +20,7 @@ const isInitialLoading = ref(true);
 const showModal = ref(false);
 const submitting = ref(false);
 
+const { showNotification } = useNotification();
 const { category: categoryState, getById } = useCategory();
 const api = productApi();
 
@@ -89,8 +91,9 @@ const handleRemove = async (productId: number) => {
   try {
     await api.removeProductFromCat(categoryId, productId);
     products.value = products.value.filter((p) => p.id !== productId);
+    showNotification("Thành công", "Đã gỡ sản phẩm khỏi danh mục.", "success");
   } catch (err) {
-    alert("Lỗi khi gỡ sản phẩm");
+    showNotification("Lỗi", "Lỗi khi gỡ sản phẩm.", "error");
   }
 };
 
