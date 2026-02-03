@@ -147,12 +147,12 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '@/@type/user'; // Đường dẫn type của bạn
-import type { Address, AddressFormData } from '@/@type/address'; // Đường dẫn type của bạn
+import type { User } from '@/@type/user'; 
+import type { Address, AddressFormData } from '@/@type/address'; 
 import AddressCard from '@/components/Address/AddressCard.vue';
 import AddressForm from '@/components/Address/AddressForm.vue';
 import { useAddress } from '@/composables/useAddress';
-import { useApi } from '@/composables/useApi'; // Hoặc đường dẫn tới composable api của bạn
+import { useApi } from '@/composables/useApi'; 
 
 /* ================= COMPOSABLES ================= */
 const { getMe, updateProfile } = useApi();

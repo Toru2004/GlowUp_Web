@@ -46,9 +46,11 @@ export const useOrder = () => {
     try {
       const response = await $fetch<{ orders: Order[] }>(`http://localhost:8081/api/orders/user/${userId}`);
       orders.value = response.orders;
+      return response.orders;
     } catch (err: any) {
       console.error('Error fetching orders:', err);
       error.value = err.data?.message || 'Có lỗi xảy ra khi tải danh sách đơn hàng.';
+      return null;
     } finally {
       loading.value = false;
     }

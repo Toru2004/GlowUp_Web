@@ -1,23 +1,34 @@
 <script setup lang="ts">
-import { useOrder } from "@/composables/useOrdes"; // Assume you have this
+import { useOrder } from "@/composables/useOrder"; 
 import { useNotification } from "@/composables/useNotification";
-
+import {useAuth} from "@/composables/useAuth"
 definePageMeta({
   layout: "admin",
 });
 
-const { getOrders, loading } = useOrder(); // Giả sử bạn đã có
+const {fetchUserOrders, loading } = useOrder(); 
 const { showNotification } = useNotification();
-
+const { getUserId } = useAuth();
 const orders = ref<any[]>([]);
 const searchQuery = ref("");
 const statusFilter = ref("all");
 
-const fetchOrders = async () => {
+const loadOrders = async () => {
   try {
-    orders.value = await getOrders();
+    const currentUserId = getUserId.value;
+    if (!currentUserId) {
+        showNotification("Lỗi", "Không tìm thấy thông tin người dùng", "error");
+        return;
+    }
+    const response = await fetchUserOrders(currentUserId);
+    
+    // Kiểm tra nếu response tồn tại thì mới gán
+    if (response) {
+      orders.value = response;
+    }
   } catch (error: any) {
     showNotification("Lỗi", "Không thể tải danh sách đơn hàng", "error");
+    console.error(error);
   }
 };
 
@@ -31,7 +42,7 @@ const filteredOrders = computed(() => {
 });
 
 onMounted(() => {
-  fetchOrders();
+  loadOrders();
 });
 </script>
 
