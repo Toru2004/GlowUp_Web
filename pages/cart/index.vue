@@ -170,17 +170,11 @@ const handleCheckout = () => {
         <!-- Cart Summary -->
         <div class="lg:col-span-1">
           <CartSummary 
-<<<<<<< HEAD
-            :totalQuantity="cart.total_quantity"
-            :totalPrice="cart.total_price"
-            :orderId="cart.order_id"
-=======
             :totalQuantity="selectedTotalQuantity"
             :totalPrice="selectedTotalPrice"
             :selectedCount="selectedItems.size"
             :hasSelection="selectedItems.size > 0"
             @checkout="handleCheckout"
->>>>>>> a23540cef1e34d774763b7bc16a7272d1ff56756
           />
         </div>
       </div>

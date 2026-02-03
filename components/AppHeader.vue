@@ -40,7 +40,7 @@ const navLinks = [
   { name: "Trang Chủ", path: "/home" },
   { name: "Sản Phẩm", path: "/shop" },
   { name: "Giới Thiệu", path: "/about" },
-  { name: "Liên Hệ", path: "/contact" },
+  { name: "Liên Hệ", path: "" },
   { name: "Admin", path: "/admin/dashboard" },
 ];
 
