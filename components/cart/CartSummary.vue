@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 const props = defineProps<{
   totalQuantity: number;
   totalPrice: number;
@@ -6,7 +6,37 @@ const props = defineProps<{
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+</script> -->
+<script setup lang="ts">
+import { useVnpay } from "@/composables/useVnpay";
+
+const props = defineProps<{
+  totalQuantity: number;
+  totalPrice: number;
+  orderId: number; // 👈 thêm orderId
+}>();
+
+const { createPayment, loading } = useVnpay();
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+
+const handleCheckout = async () => {
+  try {
+    await createPayment({
+      orderId: props.orderId,
+      // bankCode: "NCB", // optional
+    });
+    // ⛔ không cần làm gì nữa vì đã redirect
+  } catch (e) {
+    console.error("Thanh toán thất bại", e);
+  }
+};
 </script>
+
 
 <template>
   <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm sticky top-24">
@@ -34,8 +64,23 @@ const formatPrice = (price: number) =>
       </div>
     </div>
 
-    <button class="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all transform hover:-translate-y-1 shadow-lg">
+    <!-- <button class="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all transform hover:-translate-y-1 shadow-lg">
       Mua hàng ({{ totalQuantity }})
-    </button>
+    </button> -->
+    <button
+  :disabled="loading"
+  @click="handleCheckout"
+  class="w-full py-4 bg-gray-900 text-white font-bold rounded-xl
+         hover:bg-gray-800 transition-all transform hover:-translate-y-1
+         shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+>
+  <span v-if="!loading">
+    Mua hàng ({{ totalQuantity }})
+  </span>
+  <span v-else>
+    Đang chuyển đến VNPay...
+  </span>
+</button>
+
   </div>
 </template>
