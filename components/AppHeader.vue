@@ -42,6 +42,7 @@ const navLinks = [
   { name: "Giới Thiệu", path: "/about" },
   { name: "Liên Hệ", path: "" },
   { name: "Admin", path: "/admin/dashboard" },
+  { name: "Phân tích da mặt", path: "/acne" },
 ];
 
 const goToCart = () => {
