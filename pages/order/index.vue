@@ -6,6 +6,7 @@ import { useCart } from "@/composables/useCart";
 import ShippingAddress from "@/components/order/ShippingAddress.vue";
 import PaymentMethod from "@/components/order/PaymentMethod.vue";
 import OrderSummary from "@/components/order/OrderSummary.vue";
+import VoucherSelector from "@/components/order/VoucherSelector.vue";
 
 interface ContactInfo {
   fullName: string;
@@ -13,10 +14,23 @@ interface ContactInfo {
   address: string;
 }
 
+interface Voucher {
+  id: number;
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
+  min_order_value: number;
+  max_discount: number | null;
+  quantity: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
 const route = useRoute();
 const { showNotification } = useNotification();
 const { isAuthenticated, user } = useAuth();
-const { cart } = useCart();
+const { cart, removeMultiItems } = useCart();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
 // State
@@ -27,6 +41,7 @@ const contactInfo = ref<ContactInfo>({
   address: "",
 });
 const hasContactInfo = ref(false);
+const selectedVoucher = ref<Voucher | null>(null);
 const loading = ref(false);
 
 // Get selected items from cart based on query params
@@ -54,8 +69,20 @@ const shippingFee = computed(() => {
   return subtotal.value >= 500000 ? 0 : 30000;
 });
 
+const discount = computed(() => {
+  if (!selectedVoucher.value) return 0;
+  
+  const voucher = selectedVoucher.value;
+  if (voucher.discount_type === "percent") {
+    const discountAmount = (subtotal.value * voucher.discount_value) / 100;
+    return voucher.max_discount ? Math.min(discountAmount, voucher.max_discount) : discountAmount;
+  } else {
+    return voucher.discount_value;
+  }
+});
+
 const total = computed(() => {
-  return subtotal.value + shippingFee.value;
+  return subtotal.value + shippingFee.value - discount.value;
 });
 
 // Check if contact info is valid
@@ -111,6 +138,7 @@ const handlePlaceOrder = async () => {
       paymentMethod: selectedPaymentMethod.value,
       address: contactInfo.value.address,
       phone: contactInfo.value.phone,
+      voucherId: selectedVoucher.value?.id || null,
     };
 
     console.log("Creating order:", orderData);
@@ -128,6 +156,16 @@ const handlePlaceOrder = async () => {
     
     showNotification("Thành công", "Đặt hàng thành công! Cảm ơn bạn đã mua hàng.", "success");
     
+    // Remove ordered items from cart
+    if (selectedItemIds.value.length > 0) {
+      try {
+        await removeMultiItems(selectedItemIds.value);
+      } catch (removeError) {
+        console.error("Error removing items from cart after order:", removeError);
+        // We don't block the user if cart cleanup fails, but we log it
+      }
+    }
+
     // Navigate to shop
     navigateTo("/shop");
   } catch (error: any) {
@@ -167,6 +205,13 @@ const handlePlaceOrder = async () => {
             :selectedMethod="selectedPaymentMethod"
             @selectMethod="(method) => selectedPaymentMethod = method"
           />
+
+          <!-- Voucher Selector -->
+          <VoucherSelector
+            :subtotal="subtotal"
+            :selectedVoucher="selectedVoucher"
+            @selectVoucher="(voucher) => selectedVoucher = voucher"
+          />
         </div>
 
         <!-- Right Column - Order Summary -->
@@ -176,6 +221,7 @@ const handlePlaceOrder = async () => {
             :imageBaseUrl="IMAGE_BASE_URL"
             :subtotal="subtotal"
             :shippingFee="shippingFee"
+            :discount="discount"
             :total="total"
             @placeOrder="handlePlaceOrder"
           />

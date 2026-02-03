@@ -4,6 +4,7 @@ const props = defineProps<{
   imageBaseUrl: string;
   subtotal: number;
   shippingFee: number;
+  discount: number;
   total: number;
 }>();
 
@@ -46,6 +47,10 @@ const getImageUrl = (imgName: string) => {
       <div class="flex justify-between text-gray-600">
         <span>Phí vận chuyển</span>
         <span class="font-medium text-green-600">{{ shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee) }}</span>
+      </div>
+      <div v-if="discount > 0" class="flex justify-between text-gray-600">
+        <span>Giảm giá</span>
+        <span class="font-medium text-red-600">-{{ formatPrice(discount) }}</span>
       </div>
     </div>
 
