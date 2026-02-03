@@ -10,7 +10,7 @@ export const useAuth = () => {
   const user = useState<AuthUser | null>("auth_user", () => null);
 
   // INIT từ localStorage
-  if (process.client) {
+  if (import.meta.client) {
     if (!token.value) {
       token.value = localStorage.getItem("token");
     }
@@ -42,7 +42,7 @@ export const useAuth = () => {
       role: res.data.role,
     };
 
-    if (process.client && token.value) {
+    if (import.meta.client && token.value) {
       localStorage.setItem("token", token.value);
       localStorage.setItem("user", JSON.stringify(user.value));
     }
