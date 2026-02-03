@@ -54,10 +54,27 @@ export const useOrder = () => {
     }
   };
 
+  const cancelOrder = async (orderId: number) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      await $fetch(`http://localhost:8081/api/orders/cancel/${orderId}`, {
+        method: "POST",
+      });
+    } catch (err: any) {
+      console.error("Error cancelling order:", err);
+      error.value = err.data?.message || "Có lỗi xảy ra khi hủy đơn hàng.";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     orders,
     loading,
     error,
     fetchUserOrders,
+    cancelOrder,
   };
 };

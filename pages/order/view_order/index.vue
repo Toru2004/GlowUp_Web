@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useOrder } from "@/composables/useOrder";
 import { useAuth } from "@/composables/useAuth";
+import BaseConfirmModal from "@/components/modal/BaseConfirmModal.vue";
 import { 
   Package, 
   ChevronRight, 
@@ -9,11 +10,18 @@ import {
   Phone, 
   Calendar, 
   CreditCard,
-  ShoppingBag
+  ShoppingBag,
+  X
 } from "lucide-vue-next";
 
-const { orders, loading, error, fetchUserOrders } = useOrder();
+const { orders, loading, error, fetchUserOrders, cancelOrder } = useOrder();
 const { user, isAuthenticated } = useAuth();
+const { showNotification } = useNotification();
+
+// Modal state
+const showCancelModal = ref(false);
+const orderToCancel = ref<number | null>(null);
+const cancellingOrder = ref(false);
 
 onMounted(async () => {
   if (!isAuthenticated.value) {
@@ -84,6 +92,31 @@ const calculateDiscount = (order: any) => {
     return (subtotal * order.voucher.discount_value) / 100;
   }
   return 0;
+};
+
+const handleCancelOrder = (orderId: number) => {
+  orderToCancel.value = orderId;
+  showCancelModal.value = true;
+};
+
+const confirmCancelOrder = async () => {
+  if (!orderToCancel.value) return;
+
+  cancellingOrder.value = true;
+  try {
+    await cancelOrder(orderToCancel.value);
+    showNotification("Thành công", "Đã hủy đơn hàng thành công.", "success");
+    showCancelModal.value = false;
+    orderToCancel.value = null;
+    // Refresh the list
+    if (user.value?.userId) {
+      await fetchUserOrders(user.value.userId);
+    }
+  } catch (err: any) {
+    showNotification("Lỗi", err.data?.message || "Không thể hủy đơn hàng.", "error");
+  } finally {
+    cancellingOrder.value = false;
+  }
 };
 </script>
 
@@ -209,8 +242,10 @@ const calculateDiscount = (order: any) => {
             </div>
 
             <!-- Items List -->
-            <div class="mt-8">
-              <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Chi tiết sản phẩm</h4>
+            <div class="mt-8 pt-6 border-t border-gray-50">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest">Chi tiết sản phẩm</h4>
+              </div>
               <div class="space-y-3">
                 <div 
                   v-for="item in order.items" 
@@ -230,9 +265,36 @@ const calculateDiscount = (order: any) => {
                 </div>
               </div>
             </div>
+
+            <!-- Order Actions -->
+            <div 
+              v-if="order.status.toLowerCase() === 'pending'" 
+              class="mt-8 flex justify-end"
+            >
+              <button
+                @click="handleCancelOrder(order.id)"
+                class="px-6 py-2.5 rounded-xl text-sm font-bold text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
+              >
+                <X class="w-4 h-4" />
+                Hủy đơn hàng
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Reusable Confirmation Modal -->
+      <BaseConfirmModal
+        :show="showCancelModal"
+        title="Xác nhận hủy đơn hàng"
+        message="Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác."
+        confirmText="Hủy đơn hàng"
+        cancelText="Để tôi xem lại"
+        type="danger"
+        :loading="cancellingOrder"
+        @confirm="confirmCancelOrder"
+        @cancel="showCancelModal = false"
+      />
     </div>
   </div>
 </template>
