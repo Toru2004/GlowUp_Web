@@ -36,7 +36,7 @@ export const useAuth = () => {
 
     token.value = res.data.token;
     user.value = {
-      userId: res.data.userId,
+      userId: Number(res.data.userId),
       email: res.data.email,
       full_name: res.data.full_name,
       role: res.data.role,
@@ -69,18 +69,22 @@ export const useAuth = () => {
     token.value = null;
     user.value = null;
 
-    if (process.client) {
+    if (import.meta.client) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     }
 
     navigateTo("/auth/login");
   };
+  const getUserId = computed(() => {
+        return user.value?.userId ?? null;
+    });
 
   return {
     token,
     user,
     isAuthenticated,
+    getUserId,
     login,
     signup,
     logout,
