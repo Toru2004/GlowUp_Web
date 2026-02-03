@@ -4,11 +4,13 @@ import { Trash2, Minus, Plus } from "lucide-vue-next";
 const props = defineProps<{
   item: any;
   imageBaseUrl: string;
+  selected: boolean;
 }>();
 
 const emit = defineEmits<{
   updateQuantity: [itemId: number, quantity: number];
   removeItem: [itemId: number];
+  toggleSelect: [itemId: number];
 }>();
 
 const formatPrice = (price: number) =>
@@ -42,24 +44,35 @@ const handleBlurQuantity = (event: Event) => {
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row items-center gap-6 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-    <div class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+  <div class="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+    <!-- Checkbox -->
+    <input
+      type="checkbox"
+      :checked="selected"
+      @change="emit('toggleSelect', item.id)"
+      class="w-5 h-5 rounded border-gray-300 text-glow-primary-600 focus:ring-glow-primary-500 cursor-pointer"
+    />
+
+    <!-- Image -->
+    <div class="w-20 h-20 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
       <img :src="getImageUrl(item.images[0])" :alt="item.name" class="w-full h-full object-cover" />
     </div>
 
-    <div class="flex-grow text-center sm:text-left">
+    <!-- Info -->
+    <div class="flex-grow min-w-0">
       <p class="text-xs font-bold text-glow-primary-500 uppercase tracking-wider mb-1">{{ item.brand }}</p>
-      <h3 class="text-lg font-bold text-gray-900 mb-1 line-clamp-1">{{ item.name }}</h3>
+      <h3 class="text-base font-bold text-gray-900 mb-1 line-clamp-1">{{ item.name }}</h3>
       <p class="text-glow-primary-600 font-bold">{{ formatPrice(item.price) }}</p>
     </div>
 
-    <div class="flex items-center gap-4">
+    <!-- Quantity Controls -->
+    <div class="flex items-center gap-3 flex-shrink-0">
       <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
         <button 
           @click="emit('updateQuantity', item.id, item.quantity - 1)"
           :disabled="item.quantity <= 1"
           :class="[
-            'w-10 h-10 flex items-center justify-center transition-colors border-r border-gray-200',
+            'w-9 h-9 flex items-center justify-center transition-colors border-r border-gray-200',
             item.quantity <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-900'
           ]"
         >
@@ -75,7 +88,7 @@ const handleBlurQuantity = (event: Event) => {
         />
         <button 
           @click="emit('updateQuantity', item.id, item.quantity + 1)"
-          class="w-10 h-10 flex items-center justify-center hover:bg-gray-50 text-gray-900 transition-colors border-l border-gray-200"
+          class="w-9 h-9 flex items-center justify-center hover:bg-gray-50 text-gray-900 transition-colors border-l border-gray-200"
         >
           <Plus class="w-4 h-4" />
         </button>
