@@ -58,3 +58,4 @@ const formatPrice = (price: number) =>
     </button>
   </div>
 </template>
+    

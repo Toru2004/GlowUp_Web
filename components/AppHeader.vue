@@ -131,7 +131,7 @@ const goToCart = () => {
                     Chỉnh sửa thông tin
                   </NuxtLink>
                   <NuxtLink
-                    to="/order"
+                    to="/order/view_order"
                     class="dropdown-item"
                     @click="closeDropdowns"
                   >
@@ -227,7 +227,7 @@ const goToCart = () => {
                 Chỉnh sửa thông tin
               </NuxtLink>
               <NuxtLink
-                to="/order"
+                to="/order/view_order"
                 class="mobile-nav-item"
                 @click="isMenuOpen = false"
               >
