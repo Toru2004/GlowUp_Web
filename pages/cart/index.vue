@@ -97,6 +97,7 @@ const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
           <CartSummary 
             :totalQuantity="cart.total_quantity"
             :totalPrice="cart.total_price"
+            :orderId="cart.order_id"
           />
         </div>
       </div>

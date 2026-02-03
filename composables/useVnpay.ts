@@ -1,11 +1,9 @@
+// composables/useVnpay.ts
 import { ref } from "vue";
 
 export const useVnpay = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
-
-  const config = useRuntimeConfig();
-  const apiBase = `${config.public.apiBaseUrl}/vnpay`;
 
   const createPayment = async (payload: {
     orderId: number;
@@ -13,26 +11,34 @@ export const useVnpay = () => {
   }) => {
     loading.value = true;
     error.value = null;
-    console.log("API BASE =", config.public.apiBaseUrl);
-console.log("FULL URL =", `${config.public.apiBaseUrl}/vnpay/create-payment`);
+
+    console.log('🚀 Creating payment with:', payload);
 
     try {
-      const res: any = await $fetch(`${apiBase}/create-payment`, {
-        method: "POST",
+      // ✅ GỌI TRỰC TIẾP BACKEND
+      const res: any = await $fetch('http://localhost:8081/api/vnpay/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: payload,
       });
 
-      // ✅ LẤY ĐÚNG paymentUrl
+      console.log('✅ Payment created:', res);
+
       const paymentUrl = res?.data?.paymentUrl;
 
       if (!paymentUrl) {
-        throw new Error("Không nhận được URL thanh toán VNPay");
+        throw new Error('Không nhận được URL thanh toán');
       }
 
-      // 🚀 Redirect sang VNPay
+      // 🚀 Redirect to VNPay
       window.location.href = paymentUrl;
+      
+      return res;
     } catch (err: any) {
-      error.value = err?.data?.message || "Không thể tạo thanh toán";
+      console.error('❌ Payment error:', err);
+      error.value = err?.data?.message || err.message || 'Không thể tạo thanh toán';
       throw err;
     } finally {
       loading.value = false;
