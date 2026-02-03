@@ -2,13 +2,13 @@
  * API Service Composable
  * Provides reusable HTTP methods with automatic token injection
  */
-
+import type { User, ApiResponse } from "../@type/user";
 export const useApi = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBaseUrl;
-
+  const { token } = useAuth();
   const getAuthHeaders = (): HeadersInit => {
-    if (process.client) {
+    if (token.value) {
       const token = localStorage.getItem("token");
       if (token) {
         return {
@@ -34,10 +34,10 @@ export const useApi = () => {
     });
   };
 
-  const updateUser = async (id: number, data: any) => {
+  const updateProfile = async (id: number, formData: Partial<User>) => {
     return await $fetch(`${baseURL}/users/update-user/${id}`, {
       method: "PUT",
-      body: data,
+      body: formData,
       headers: getAuthHeaders(),
     });
   };
@@ -48,6 +48,12 @@ export const useApi = () => {
       headers: getAuthHeaders(),
     });
   };
-
-  return { getUsers, createUser, updateUser, deleteUser };
+  const getMe = async ():Promise<User> => {
+    const res = await $fetch<ApiResponse<User>>(`${baseURL}/users/me`, {
+          method: "GET",
+          headers: getAuthHeaders(),
+      });
+      return res.data;
+    }
+  return { getUsers, createUser, updateProfile, deleteUser, getMe };
 };
