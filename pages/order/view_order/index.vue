@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useOrder } from "@/composables/useOrder";
 import { useAuth } from "@/composables/useAuth";
 import BaseConfirmModal from "@/components/modal/BaseConfirmModal.vue";
@@ -22,6 +22,22 @@ const { showNotification } = useNotification();
 const showCancelModal = ref(false);
 const orderToCancel = ref<number | null>(null);
 const cancellingOrder = ref(false);
+
+// Filter state
+const activeStatus = ref("all");
+const statusTabs = [
+  { label: "Tất cả", value: "all" },
+  { label: "Chờ xác nhận", value: "pending" },
+  { label: "Đã xác nhận", value: "confirmed" },
+  { label: "Đang giao hàng", value: "shipping" },
+  { label: "Đã giao hàng", value: "completed" },
+  { label: "Đã hủy", value: "cancelled" },
+];
+
+const filteredOrders = computed(() => {
+  if (activeStatus.value === "all") return orders.value;
+  return orders.value.filter(order => order.status.toLowerCase() === activeStatus.value.toLowerCase());
+});
 
 onMounted(async () => {
   if (!isAuthenticated.value) {
@@ -50,8 +66,10 @@ const getStatusClass = (status: string) => {
       return "bg-yellow-100 text-yellow-700";
     case "confirmed":
       return "bg-blue-100 text-blue-700";
+    case "shipping":
     case "shipped":
       return "bg-purple-100 text-purple-700";
+    case "completed":
     case "delivered":
       return "bg-green-100 text-green-700";
     case "cancelled":
@@ -67,8 +85,10 @@ const getStatusText = (status: string) => {
       return "Đang chờ xử lý";
     case "confirmed":
       return "Đã xác nhận";
+    case "shipping":
     case "shipped":
       return "Đang giao hàng";
+    case "completed":
     case "delivered":
       return "Đã giao hàng";
     case "cancelled":
@@ -134,6 +154,23 @@ const confirmCancelOrder = async () => {
         </NuxtLink>
       </div>
 
+      <!-- Status Tabs -->
+      <div class="flex items-center gap-2 mb-8 bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto no-scrollbar">
+        <button
+          v-for="tab in statusTabs"
+          :key="tab.value"
+          @click="activeStatus = tab.value"
+          :class="[
+            'px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap',
+            activeStatus === tab.value 
+              ? 'bg-glow-primary-600 text-white shadow-md' 
+              : 'text-gray-500 hover:bg-gray-50'
+          ]"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
         <div class="w-12 h-12 border-4 border-gray-100 border-t-glow-primary-600 rounded-full animate-spin mb-4"></div>
@@ -156,26 +193,34 @@ const confirmCancelOrder = async () => {
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="orders.length === 0" class="p-12 bg-white rounded-2xl shadow-sm border border-gray-100 text-center">
+      <div v-else-if="filteredOrders.length === 0" class="p-12 bg-white rounded-2xl shadow-sm border border-gray-100 text-center">
         <div class="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-6">
           <Package class="w-10 h-10" />
         </div>
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">Chưa có đơn hàng nào</h3>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy đơn hàng</h3>
         <p class="text-gray-600 mb-8 max-w-md mx-auto">
-          Bạn chưa thực hiện đơn hàng nào. Hãy khám phá những sản phẩm tuyệt vời của GlowUp và bắt đầu mua sắm ngay!
+          {{ activeStatus === 'all' ? 'Bạn chưa thực hiện đơn hàng nào.' : 'Không có đơn hàng nào ở trạng thái này.' }}
         </p>
         <NuxtLink 
+          v-if="activeStatus === 'all'"
           to="/shop"
           class="inline-flex items-center px-8 py-3 bg-glow-primary-600 text-white font-bold rounded-xl hover:bg-glow-primary-700 transition-all hover:shadow-lg active:scale-95"
         >
           Mua sắm ngay
         </NuxtLink>
+        <button 
+          v-else
+          @click="activeStatus = 'all'"
+          class="inline-flex items-center px-8 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 transition-all active:scale-95"
+        >
+          Xem tất cả đơn hàng
+        </button>
       </div>
 
       <!-- Orders List -->
       <div v-else class="space-y-6">
         <div 
-          v-for="order in orders" 
+          v-for="order in filteredOrders" 
           :key="order.id"
           class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
         >
@@ -302,5 +347,13 @@ const confirmCancelOrder = async () => {
 <style scoped>
 .font-serif {
   font-family: 'Playfair Display', serif;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>
