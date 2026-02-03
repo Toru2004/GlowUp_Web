@@ -11,13 +11,13 @@ const emit = defineEmits<{
 
 const paymentMethods = [
   {
-    id: "cod",
+    id: "COD",
     name: "Thanh toán khi nhận hàng (COD)",
     description: "Thanh toán bằng tiền mặt khi nhận hàng",
     icon: Wallet,
   },
   {
-    id: "bank_transfer",
+    id: "Banking",
     name: "Chuyển khoản ngân hàng",
     description: "Chuyển khoản qua tài khoản ngân hàng",
     icon: Building2,

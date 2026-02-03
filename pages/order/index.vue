@@ -7,7 +7,7 @@ import ShippingAddress from "@/components/order/ShippingAddress.vue";
 import PaymentMethod from "@/components/order/PaymentMethod.vue";
 import OrderSummary from "@/components/order/OrderSummary.vue";
 
-interface Address {
+interface ContactInfo {
   fullName: string;
   phone: string;
   address: string;
@@ -20,13 +20,13 @@ const { cart } = useCart();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
 // State
-const selectedPaymentMethod = ref("cod");
-const shippingAddress = ref<Address>({
+const selectedPaymentMethod = ref("COD");
+const contactInfo = ref<ContactInfo>({
   fullName: "",
   phone: "",
   address: "",
 });
-const hasAddress = ref(false);
+const hasContactInfo = ref(false);
 const loading = ref(false);
 
 // Get selected items from cart based on query params
@@ -58,11 +58,11 @@ const total = computed(() => {
   return subtotal.value + shippingFee.value;
 });
 
-// Check if address is valid
-const isAddressValid = computed(() => {
-  return shippingAddress.value.fullName &&
-         shippingAddress.value.phone &&
-         shippingAddress.value.address
+// Check if contact info is valid
+const isContactInfoValid = computed(() => {
+  return contactInfo.value.fullName &&
+         contactInfo.value.phone &&
+         contactInfo.value.address;
 });
 
 onMounted(() => {
@@ -78,52 +78,62 @@ onMounted(() => {
     return;
   }
 
-  // TODO: Load user's saved address from API
-  // For now, we'll check if user object has address
-  if (user.value?.address) {
-    shippingAddress.value = { ...user.value.address };
-    hasAddress.value = true;
+  // TODO: Load user's saved contact info from API
+  // For now, we'll check if user object has contact info
+  if (user.value?.contactInfo) {
+    contactInfo.value = { ...user.value.contactInfo };
+    hasContactInfo.value = true;
   }
 });
 
-const handleEditAddress = () => {
-  hasAddress.value = false;
+const handleEditContactInfo = () => {
+  hasContactInfo.value = false;
 };
 
 const handlePlaceOrder = async () => {
-  if (!isAddressValid.value) {
-    showNotification("Lỗi", "Vui lòng điền đầy đủ thông tin địa chỉ giao hàng.", "error");
+  if (!isContactInfoValid.value) {
+    showNotification("Lỗi", "Vui lòng điền đầy đủ thông tin liên hệ và địa chỉ giao hàng.", "error");
     return;
   }
 
   loading.value = true;
   try {
-    // TODO: Call API to create order
+    // Prepare order data according to API specification
     const orderData = {
+      userId: user.value?.userId,
       items: selectedItems.value.map((item: any) => ({
-        product_id: item.product_id,
+        productId: item.product_id,
         quantity: item.quantity,
         price: item.price,
       })),
-      shipping_address: shippingAddress.value,
-      payment_method: selectedPaymentMethod.value,
-      subtotal: subtotal.value,
-      shipping_fee: shippingFee.value,
-      total: total.value,
+      totalPrice: total.value,
+      status: "pending",
+      paymentMethod: selectedPaymentMethod.value,
+      address: contactInfo.value.address,
+      phone: contactInfo.value.phone,
     };
 
-    console.log("Order data:", orderData);
+    console.log("Creating order:", orderData);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Call API to create order
+    const response = await $fetch("http://localhost:8081/api/orders/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: orderData,
+    });
+
+    console.log("Order created successfully:", response);
     
     showNotification("Thành công", "Đặt hàng thành công! Cảm ơn bạn đã mua hàng.", "success");
     
-    // Navigate to order success page or order history
+    // Navigate to shop
     navigateTo("/shop");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Order error:", error);
-    showNotification("Lỗi", "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.", "error");
+    const errorMessage = error.data?.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.";
+    showNotification("Lỗi", errorMessage, "error");
   } finally {
     loading.value = false;
   }
@@ -146,10 +156,10 @@ const handlePlaceOrder = async () => {
         <div class="lg:col-span-2 space-y-6">
           <!-- Shipping Address -->
           <ShippingAddress
-            :address="shippingAddress"
-            :hasAddress="hasAddress"
-            @editAddress="handleEditAddress"
-            @update:address="(val) => shippingAddress = val"
+            :contactInfo="contactInfo"
+            :hasContactInfo="hasContactInfo"
+            @editContactInfo="handleEditContactInfo"
+            @update:contactInfo="(val) => contactInfo = val"
           />
 
           <!-- Payment Method -->

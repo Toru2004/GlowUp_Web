@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { MapPin, Edit2 } from "lucide-vue-next";
 
-interface Address {
+interface ContactInfo {
   fullName: string;
   phone: string;
   address: string;
 }
 
 const props = defineProps<{
-  address: Address;
-  hasAddress: boolean;
+  contactInfo: ContactInfo;
+  hasContactInfo: boolean;
 }>();
 
 const emit = defineEmits<{
-  editAddress: [];
-  "update:address": [address: Address];
+  editContactInfo: [];
+  "update:contactInfo": [contactInfo: ContactInfo];
 }>();
 </script>
 
@@ -26,8 +26,8 @@ const emit = defineEmits<{
         <h2 class="text-lg font-bold text-gray-900">Địa chỉ giao hàng</h2>
       </div>
       <button 
-        v-if="hasAddress"
-        @click="emit('editAddress')"
+        v-if="hasContactInfo"
+        @click="emit('editContactInfo')"
         class="flex items-center gap-2 text-sm text-glow-primary-600 hover:text-glow-primary-700 font-medium transition-colors"
       >
         <Edit2 class="w-4 h-4" />
@@ -35,28 +35,26 @@ const emit = defineEmits<{
       </button>
     </div>
 
-    <div v-if="hasAddress" class="space-y-2">
+    <div v-if="hasContactInfo" class="space-y-2">
       <div class="flex items-start gap-3">
         <div class="flex-1">
-          <p class="font-bold text-gray-900">{{ address.fullName }}</p>
-          <p class="text-gray-600 text-sm">{{ address.phone }}</p>
+          <p class="font-bold text-gray-900">{{ contactInfo.fullName }}</p>
+          <p class="text-gray-600 text-sm">{{ contactInfo.phone }}</p>
         </div>
       </div>
-      <p class="text-gray-700 leading-relaxed">
-        {{ address.street }}, {{ address.ward }}, {{ address.district }}, {{ address.city }}
-      </p>
+      <p class="text-gray-700 leading-relaxed">{{ contactInfo.address }}</p>
     </div>
 
     <div v-else class="space-y-4">
-      <p class="text-gray-500 text-sm mb-4">Bạn chưa có địa chỉ giao hàng. Vui lòng nhập thông tin bên dưới.</p>
+      <p class="text-gray-500 text-sm mb-4">Bạn chưa có thông tin liên hệ. Vui lòng nhập thông tin bên dưới.</p>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên</label>
           <input 
             type="text"
-            :value="address.fullName"
-            @input="$emit('update:address', { ...address, fullName: ($event.target as HTMLInputElement).value })"
+            :value="contactInfo.fullName"
+            @input="$emit('update:contactInfo', { ...contactInfo, fullName: ($event.target as HTMLInputElement).value })"
             placeholder="Nguyễn Văn A"
             class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-glow-primary-200 focus:border-glow-primary-400 outline-none transition-all"
           />
@@ -65,8 +63,8 @@ const emit = defineEmits<{
           <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
           <input 
             type="tel"
-            :value="address.phone"
-            @input="$emit('update:address', { ...address, phone: ($event.target as HTMLInputElement).value })"
+            :value="contactInfo.phone"
+            @input="$emit('update:contactInfo', { ...contactInfo, phone: ($event.target as HTMLInputElement).value })"
             placeholder="0123456789"
             class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-glow-primary-200 focus:border-glow-primary-400 outline-none transition-all"
           />
@@ -74,14 +72,14 @@ const emit = defineEmits<{
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ cụ thể</label>
-        <input 
-          type="text"
-          :value="address.address"
-          @input="$emit('update:address', { ...address, address: ($event.target as HTMLInputElement).value })"
-          placeholder="Số nhà, tên đường"
-          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-glow-primary-200 focus:border-glow-primary-400 outline-none transition-all"
-        />
+        <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ đầy đủ</label>
+        <textarea
+          :value="contactInfo.address"
+          @input="$emit('update:contactInfo', { ...contactInfo, address: ($event.target as HTMLTextAreaElement).value })"
+          placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố&#10;Ví dụ: 123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+          rows="3"
+          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-glow-primary-200 focus:border-glow-primary-400 outline-none transition-all resize-none"
+        ></textarea>
       </div>
     </div>
   </div>
