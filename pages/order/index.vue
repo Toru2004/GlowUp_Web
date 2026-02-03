@@ -30,7 +30,7 @@ interface Voucher {
 const route = useRoute();
 const { showNotification } = useNotification();
 const { isAuthenticated, user } = useAuth();
-const { cart } = useCart();
+const { cart, removeMultiItems } = useCart();
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
 // State
@@ -156,6 +156,16 @@ const handlePlaceOrder = async () => {
     
     showNotification("Thành công", "Đặt hàng thành công! Cảm ơn bạn đã mua hàng.", "success");
     
+    // Remove ordered items from cart
+    if (selectedItemIds.value.length > 0) {
+      try {
+        await removeMultiItems(selectedItemIds.value);
+      } catch (removeError) {
+        console.error("Error removing items from cart after order:", removeError);
+        // We don't block the user if cart cleanup fails, but we log it
+      }
+    }
+
     // Navigate to shop
     navigateTo("/shop");
   } catch (error: any) {

@@ -126,6 +126,19 @@ export const useCart = () => {
     }
   };
 
+  const removeMultiItems = async (ids: number[]) => {
+    try {
+      await $fetch(`${baseURL}/carts/remove-multi-item`, {
+        method: "POST",
+        body: { ids },
+      });
+      await fetchCart();
+    } catch (error) {
+      console.error("Error removing multi items:", error);
+      throw error;
+    }
+  };
+
   // Auto fetch when authenticated
   if (process.client) {
     watch(isAuthenticated, (val) => {
@@ -146,5 +159,6 @@ export const useCart = () => {
     updateQuantity,
     removeItem,
     clearCart,
+    removeMultiItems,
   };
 };
