@@ -77,14 +77,30 @@ export const useAuth = () => {
     navigateTo("/auth/login");
   };
   const getUserId = computed(() => {
-        return user.value?.userId ?? null;
-    });
+    return user.value?.userId ?? null;
+  });
+
+  const fetchMe = async () => {
+    if (!token.value) return null;
+
+    const { getMe } = useApi();
+    const me = await getMe();
+
+    user.value = me;
+
+    if (import.meta.client) {
+      localStorage.setItem("user", JSON.stringify(me));
+    }
+
+    return me;
+  };
 
   return {
     token,
     user,
     isAuthenticated,
     getUserId,
+    fetchMe,
     login,
     signup,
     logout,
