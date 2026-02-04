@@ -6,16 +6,14 @@ export const useReview = () => {
 
   const config = useRuntimeConfig();
   const baseURL = config?.public?.apiBaseUrl || "http://localhost:8081/api";
+  const { token } = useAuth();
 
   const getAuthHeaders = (): HeadersInit => {
-    if (process.client) {
-      const token = localStorage.getItem("token");
-      if (token) {
-        return {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        };
-      }
+    if (token.value) {
+      return {
+        Authorization: `Bearer ${token.value}`,
+        "Content-Type": "application/json",
+      };
     }
     return { "Content-Type": "application/json" };
   };
@@ -159,7 +157,7 @@ export const useReview = () => {
           headers: getAuthHeaders(),
         }
       );
-      return response?.hasPurchased || false;
+      return (response as any)?.hasPurchased || false;
     } catch (err: any) {
       // If user not authenticated or any error, return false
       return false;
