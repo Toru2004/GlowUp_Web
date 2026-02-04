@@ -61,8 +61,8 @@ const loadReviews = async () => {
       currentPage.value,
       pageSize.value
     );
-    reviews.value = response.data || [];
-    totalReviews.value = response.total || 0;
+    reviews.value = (response as any)?.data || [];
+    totalReviews.value = (response as any)?.total || 0;
   } catch (error) {
     showNotification({
       type: "error",
@@ -139,6 +139,14 @@ const removeMedia = (index: number) => {
 
 // Submit review
 const handleSubmitReview = async () => {
+  if (!user.value) {
+    showNotification({
+      type: "error",
+      message: "Vui lòng đăng nhập để gửi đánh giá",
+    });
+    return;
+  }
+
   if (!newReview.value.comment.trim()) {
     showNotification({
       type: "error",
@@ -165,12 +173,18 @@ const handleSubmitReview = async () => {
       media_urls: [],
     };
 
-    await createReview(productId.value, reviewData);
+    const result: any = await createReview(productId.value, reviewData);
 
     showNotification({
       type: "success",
       message: "Cảm ơn bạn đã đánh giá",
     });
+
+    // Add new review to list immediately if it has data
+    if (result?.data) {
+      reviews.value.unshift(result.data);
+      totalReviews.value++;
+    }
 
     // Reset form
     newReview.value = {
@@ -182,9 +196,11 @@ const handleSubmitReview = async () => {
     selectedFiles.value = [];
     mediaPreviews.value = [];
 
-    // Reload reviews
-    currentPage.value = 1;
-    await loadReviews();
+    // Reload reviews only if not added immediately
+    if (!result?.data) {
+      currentPage.value = 1;
+      await loadReviews();
+    }
   } catch (error: any) {
     console.error("Catch error in ProductReviewSection:", error);
     // Extract error message - could be Error object or string
@@ -201,14 +217,14 @@ const handleSubmitReview = async () => {
 // Calculate average rating
 const averageRating = computed(() => {
   if (reviews.value.length === 0) return 0;
-  const sum = reviews.value.reduce((acc, review) => acc + review.rating, 0);
+  const sum = reviews.value.reduce((acc: number, review: Review) => acc + review.rating, 0);
   return (sum / reviews.value.length).toFixed(1);
 });
 
 // Count reviews by rating
 const ratingCounts = computed(() => {
   const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  reviews.value.forEach((review) => {
+  reviews.value.forEach((review: Review) => {
     counts[review.rating as keyof typeof counts]++;
   });
   return counts;
@@ -218,7 +234,7 @@ const ratingCounts = computed(() => {
 const filteredReviews = computed(() => {
   if (!filterRating.value) return reviews.value;
   return reviews.value.filter(
-    (review) => review.rating === parseInt(filterRating.value)
+    (review: Review) => review.rating === parseInt(filterRating.value)
   );
 });
 
@@ -252,7 +268,7 @@ onMounted(async () => {
               v-for="n in 5"
               :key="n"
               class="w-4 h-4 fill-current"
-              :class="n <= Math.round(parseFloat(averageRating))"
+              :class="{ 'text-yellow-400': n <= Math.round(parseFloat(String(averageRating))) }"
             />
           </div>
           <div class="text-sm text-gray-500 font-medium">
@@ -436,7 +452,7 @@ onMounted(async () => {
           {{
             review.is_anonymous
               ? "A"
-              : (review.username || "U").charAt(0).toUpperCase()
+              : (review.username || review.full_name || "U").charAt(0).toUpperCase()
           }}
         </div>
 
@@ -447,7 +463,7 @@ onMounted(async () => {
               {{
                 review.is_anonymous
                   ? "Người dùng ẩn danh"
-                  : review.username || "Người dùng"
+                  : review.username || review.full_name || "Người dùng"
               }}
             </span>
             <span
