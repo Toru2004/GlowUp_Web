@@ -41,7 +41,7 @@ const navLinks = [
   { name: "Sản Phẩm", path: "/shop" },
   { name: "Giới Thiệu", path: "/about" },
   { name: "Liên Hệ", path: "" },
-  { name: "Admin", path: "/admin/dashboard" },
+  { name: "Xem đơn hàng", path: "/order/view_order" },
   { name: "Phân tích da mặt", path: "/acne" },
 ];
 
@@ -130,14 +130,6 @@ const goToCart = () => {
                   >
                     <Settings class="w-4 h-4" />
                     Chỉnh sửa thông tin
-                  </NuxtLink>
-                  <NuxtLink
-                    to="/order/view_order"
-                    class="dropdown-item"
-                    @click="closeDropdowns"
-                  >
-                    <ClipboardList class="w-4 h-4" />
-                    Xem đơn hàng
                   </NuxtLink>
                   <div class="my-1 border-t border-gray-100"></div>
                   <button
