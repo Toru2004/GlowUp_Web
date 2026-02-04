@@ -1,22 +1,52 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useOrder } from "../../composables/useOrder";
+import { useNotification } from "../../composables/useNotification";
 import type { Order } from "../../@type/order";
+import BaseConfirmModal from "../../components/modal/BaseConfirmModal.vue";
 
 definePageMeta({
   layout: "admin",
 });
 
 const { orders, loading, error, fetchAllOrders, updateOrderStatus } = useOrder();
+const { showNotification } = useNotification();
 const selectedOrder = ref<Order | null>(null);
 const showModal = ref(false);
 const submitting = ref(false);
+const processingId = ref<number | null>(null);
+const newStatus = ref<string>("");
 
-// Toast state
-const toast = ref<{ message: string; type: "success" | "error" } | null>(null);
-const showToast = (message: string, type: "success" | "error") => {
-  toast.value = { message, type };
-  setTimeout(() => (toast.value = null), 3000);
+// Confirm modal state
+const showConfirmModal = ref(false);
+const confirmModalTitle = ref("");
+const confirmModalMessage = ref("");
+const pendingUpdate = ref<{ orderId: number; status: string } | null>(null);
+
+const statusOptions = [
+  { value: "pending", label: "Chờ xác nhận" },
+  { value: "confirmed", label: "Đã xác nhận" },
+  { value: "shipping", label: "Đang giao hàng" },
+  { value: "completed", label: "Đã giao hàng" },
+  { value: "cancelled", label: "Đã hủy" },
+];
+
+const getAvailableOptions = (currentStatus: string) => {
+  const status = currentStatus.toLowerCase();
+  switch (status) {
+    case "pending":
+      return statusOptions.filter(opt => ["pending", "confirmed", "cancelled"].includes(opt.value));
+    case "confirmed":
+      return statusOptions.filter(opt => ["confirmed", "shipping", "cancelled"].includes(opt.value));
+    case "shipping":
+      return statusOptions.filter(opt => ["shipping", "completed"].includes(opt.value));
+    case "completed":
+      return statusOptions.filter(opt => ["completed"].includes(opt.value));
+    case "cancelled":
+      return statusOptions.filter(opt => ["cancelled"].includes(opt.value));
+    default:
+      return statusOptions;
+  }
 };
 
 onMounted(async () => {
@@ -25,23 +55,42 @@ onMounted(async () => {
 
 const openDetailModal = (order: Order) => {
   selectedOrder.value = order;
+  newStatus.value = order.status;
   showModal.value = true;
 };
 
-const handleUpdateStatus = async (orderId: number, newStatus: string) => {
-  if (!confirm(`Bạn có chắc muốn chuyển trạng thái sang "${newStatus}"?`)) return;
+const handleUpdateStatus = (orderId: number, status: string) => {
+  const statusLabel = statusOptions.find(opt => opt.value === status)?.label || status;
+  pendingUpdate.value = { orderId, status };
+  confirmModalTitle.value = "Xác nhận cập nhật";
+  confirmModalMessage.value = `Bạn có chắc chắn muốn chuyển trạng thái đơn hàng #${orderId} sang "${statusLabel}"?`;
+  showConfirmModal.value = true;
+};
+
+const confirmStatusUpdate = async () => {
+  if (!pendingUpdate.value) return;
+  
+  const { orderId, status } = pendingUpdate.value;
+  const statusLabel = statusOptions.find(opt => opt.value === status)?.label || status;
+  
+  processingId.value = orderId;
   submitting.value = true;
+  showConfirmModal.value = false;
+  
   try {
-    await updateOrderStatus(orderId, newStatus);
-    showToast("Cập nhật trạng thái thành công", "success");
+    await updateOrderStatus(orderId, status);
+    showNotification("Thành công", `Đã cập nhật trạng thái đơn hàng #${orderId} thành ${statusLabel}`, "success");
     await fetchAllOrders();
     if (selectedOrder.value?.id === orderId) {
       selectedOrder.value = orders.value.find(o => o.id === orderId) || null;
     }
-  } catch (err) {
-    showToast("Lỗi khi cập nhật trạng thái", "error");
+  } catch (err: any) {
+    showNotification("Lỗi", err.data?.message || "Lỗi khi cập nhật trạng thái", "error");
+    await fetchAllOrders();
   } finally {
+    processingId.value = null;
     submitting.value = false;
+    pendingUpdate.value = null;
   }
 };
 
@@ -50,7 +99,7 @@ const getStatusBadgeClass = (status: string) => {
     case "pending": return "badge-warning";
     case "confirmed": return "badge-info";
     case "shipping": return "badge-primary";
-    case "delivered": return "badge-success";
+    case "completed": return "badge-success";
     case "cancelled": return "badge-error";
     default: return "badge-secondary";
   }
@@ -61,7 +110,7 @@ const getStatusText = (status: string) => {
     case "pending": return "Chờ xác nhận";
     case "confirmed": return "Đã xác nhận";
     case "shipping": return "Đang giao hàng";
-    case "delivered": return "Đã giao hàng";
+    case "completed": return "Đã giao hàng";
     case "cancelled": return "Đã hủy";
     default: return status;
   }
@@ -138,6 +187,7 @@ const formatPrice = (price: number) => {
                 <span :class="['badge', getStatusBadgeClass(order.status)]">
                   {{ getStatusText(order.status) }}
                 </span>
+                <div v-if="processingId === order.id" class="mini-spinner ml-2 inline-block"></div>
               </td>
               <td>
                 <div class="flex gap-2">
@@ -212,55 +262,50 @@ const formatPrice = (price: number) => {
 
           <div class="status-management">
             <label class="info-label">Cập nhật trạng thái</label>
-            <div class="flex flex-wrap gap-2 mt-2">
+            <div class="flex gap-2 mt-2">
+              <select 
+                v-model="newStatus"
+                class="flex-1 p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                :disabled="submitting || ['completed', 'cancelled'].includes(selectedOrder.status)"
+              >
+                <option v-for="opt in getAvailableOptions(selectedOrder.status)" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
               <button 
-                v-if="selectedOrder.status === 'pending'"
-                class="btn btn-info flex-1" 
-                @click="handleUpdateStatus(selectedOrder.id, 'confirmed')"
-                :disabled="submitting"
-              >Xác nhận đơn</button>
-              
-              <button 
-                v-if="selectedOrder.status === 'confirmed'"
-                class="btn btn-primary flex-1" 
-                @click="handleUpdateStatus(selectedOrder.id, 'shipping')"
-                :disabled="submitting"
-              >Giao hàng</button>
-              
-              <button 
-                v-if="selectedOrder.status === 'shipping'"
-                class="btn btn-success flex-1" 
-                @click="handleUpdateStatus(selectedOrder.id, 'delivered')"
-                :disabled="submitting"
-              >Hoàn tất</button>
-              
-              <button 
-                v-if="['pending', 'confirmed'].includes(selectedOrder.status)"
-                class="btn btn-error flex-1" 
-                @click="handleUpdateStatus(selectedOrder.id, 'cancelled')"
-                :disabled="submitting"
-              >Hủy đơn</button>
-              
-              <div v-if="selectedOrder.status === 'delivered'" class="text-green-600 font-medium flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Đơn hàng đã hoàn tất
-              </div>
-              
-              <div v-if="selectedOrder.status === 'cancelled'" class="text-red-600 font-medium flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                Đơn hàng đã bị hủy
-              </div>
+                class="btn btn-primary" 
+                @click="handleUpdateStatus(selectedOrder.id, newStatus)"
+                :disabled="submitting || newStatus === selectedOrder.status || ['completed', 'cancelled'].includes(selectedOrder.status)"
+              >
+                <span v-if="submitting" class="mini-spinner mr-2"></span>
+                Cập nhật
+              </button>
+            </div>
+            
+            <div v-if="selectedOrder.status === 'completed'" class="mt-4 text-green-600 font-medium flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Đơn hàng đã hoàn tất
+            </div>
+            
+            <div v-if="selectedOrder.status === 'cancelled'" class="mt-4 text-red-600 font-medium flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Đơn hàng đã bị hủy
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <transition name="fade">
-      <div v-if="toast" :class="['toast', toast.type === 'success' ? 'bg-green-600' : 'bg-red-600']">
-        {{ toast.message }}
-      </div>
-    </transition>
+    <!-- Confirm Modal -->
+    <BaseConfirmModal
+      :show="showConfirmModal"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      @confirm="confirmStatusUpdate"
+      @cancel="showConfirmModal = false"
+      type="info"
+      :loading="submitting"
+    />
   </div>
 </template>
 
@@ -338,6 +383,16 @@ const formatPrice = (price: number) => {
 .badge-success { background: #dcfce7; color: #16a34a; }
 .badge-error { background: #fee2e2; color: #dc2626; }
 .badge-secondary { background: #f3f4f6; color: #6b7280; }
+
+/* Status cell and select */
+.mini-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #f3f4f6;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
 
 /* Buttons */
 .btn {
