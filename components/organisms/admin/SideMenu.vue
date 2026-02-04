@@ -10,7 +10,9 @@ import {
   Tag,
   Settings,
   Package,
+  Ship
 } from "lucide-vue-next";
+import { icon } from "leaflet";
 
 const router = useRouter();
 const route = useRoute();
@@ -53,16 +55,22 @@ const menuItems = [
     description: "Bình luận & xếp hạng",
   },
   {
+    label: "Vận chuyển",
+    path:"/admin/shipping",
+    icon: Ship,
+    description:"Quản lý trình trạng vận chuyển"
+  },
+  {
     label: "Khuyến mãi",
     path: "/admin/vouchers",
     icon: Tag,
     description: "Mã giảm giá & ưu đãi",
   },
   {
-    label: "Cài đặt",
-    path: "/admin/settings",
-    icon: Settings,
-    description: "Thiết lập hệ thống",
+    label: "Cửa hàng",
+    path: "/admin/stores",
+    icon: Tag,
+    description: "cửa hàng",
   },
 ];
 

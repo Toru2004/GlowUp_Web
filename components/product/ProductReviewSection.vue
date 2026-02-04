@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { Star, User, CheckCircle2, Eye, EyeOff, Upload, X } from "lucide-vue-next";
-import type { Review, ReviewRequest } from "~/@type/product";
+import type { Review, ReviewRequest } from "@/@type/product";
 import { useAuth } from "@/composables/useAuth";
 import { useReview } from "@/composables/useReview";
 import { useNotification } from "@/composables/useNotification";
