@@ -37,8 +37,12 @@ onMounted(() => {
 
 const stats = computed(() => {
   const orders = orderComposable.orders.value || [];
-  const completedOrders = orders.filter(o => o.status.toLowerCase() === 'completed');
-  const revenue = completedOrders.reduce((sum, o) => sum + o.total_price, 0);
+  // User instruction: use 'completed' status for revenue chart
+  const completedOrders = orders.filter(o => 
+    o.status?.toLowerCase() === 'completed'
+  );
+  
+  const revenue = completedOrders.reduce((sum, o) => sum + Number(o.total_price || 0), 0);
   
   return [
     {
@@ -79,7 +83,7 @@ const stats = computed(() => {
 const revenueChartData = computed(() => {
   const orders = orderComposable.orders.value || [];
   const completedOrders = orders.filter(o => 
-    o.status.toLowerCase() === 'completed' || o.status.toLowerCase() === 'delivered'
+    o.status?.toLowerCase() === 'completed'
   );
   
   // Get start of today (local time)
@@ -99,14 +103,15 @@ const revenueChartData = computed(() => {
         orderDate.getMonth() === d.getMonth() &&
         orderDate.getDate() === d.getDate()
       ) {
-        return sum + o.total_price;
+        return sum + Number(o.total_price || 0);
       }
       return sum;
     }, 0);
 
     return {
       total: dayTotal,
-      label: d.toLocaleDateString('vi-VN', { weekday: 'short' })
+      label: d.toLocaleDateString('vi-VN', { weekday: 'short' }),
+      date: d.toISOString()
     };
   });
 
@@ -119,9 +124,9 @@ const revenueChartData = computed(() => {
 });
 
 const recentOrders = computed(() => {
-  return (orderComposable.orders.value || [])
-    .slice(0, 5)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  return [...(orderComposable.orders.value || [])]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
 });
 
 const getStatusBadge = (status: string) => {
@@ -197,12 +202,12 @@ const formatDate = (date: string) => {
             <option>7 ngày qua</option>
           </select>
         </div>
-        <div class="h-64 flex items-end justify-between gap-2 pt-4">
-          <div v-for="(day, i) in revenueChartData" :key="i" class="flex-1 group relative">
-            <div :style="{ height: day.total > 0 ? day.height + '%' : '4px' }" 
-                 :class="['w-full rounded-t-lg transition-all duration-300 cursor-pointer', day.total > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-slate-100']"></div>
+        <div class="h-64 flex justify-between gap-3 pt-4">
+          <div v-for="(day, i) in revenueChartData" :key="i" class="flex-1 h-full flex flex-col justify-end group relative">
+            <div :style="{ height: day.total > 0 ? (day.height || 0) + '%' : '4px' }" 
+                 :class="['w-full rounded-t-lg transition-all duration-300 cursor-pointer', day.total > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-slate-200']"></div>
             <span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-              {{ day.total.toLocaleString('vi-VN') }}đ
+              {{ (day.total || 0).toLocaleString('vi-VN') }}đ
             </span>
           </div>
         </div>

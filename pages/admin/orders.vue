@@ -131,6 +131,21 @@ const formatDate = (dateStr: string) => {
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
 };
+
+const getSubtotal = (items: any[]) => {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+};
+
+const calculateDiscountValue = (order: Order) => {
+  if (!order.voucher) return 0;
+  if (order.voucher.discount_type === "fixed") {
+    return order.voucher.discount_value;
+  } else if (order.voucher.discount_type === "percent") {
+    const subtotal = getSubtotal(order.items);
+    return (subtotal * order.voucher.discount_value) / 100;
+  }
+  return 0;
+};
 </script>
 
 <template>
@@ -250,9 +265,23 @@ const formatPrice = (price: number) => {
               </div>
             </div>
             <div v-if="selectedOrder.voucher" class="voucher-info mt-2 p-2 bg-blue-50 rounded border border-blue-100 text-blue-700 text-sm">
-                Voucher áp dụng: <strong>{{ selectedOrder.voucher.code }}</strong> (-{{ formatPrice(selectedOrder.voucher.discount_value) }})
+                Voucher áp dụng: <strong>{{ selectedOrder.voucher.code }}</strong> 
+                <span v-if="selectedOrder.voucher.discount_type === 'percent'">
+                  (-{{ selectedOrder.voucher.discount_value }}% = -{{ formatPrice(calculateDiscountValue(selectedOrder)) }})
+                </span>
+                <span v-else>
+                  (-{{ formatPrice(selectedOrder.voucher.discount_value) }})
+                </span>
             </div>
-            <div class="order-summary mt-4 pt-4 border-t">
+            <div class="order-summary mt-4 pt-4 border-t space-y-2">
+              <div class="flex justify-between items-center text-sm text-gray-600">
+                <span>Tạm tính:</span>
+                <span>{{ formatPrice(getSubtotal(selectedOrder.items)) }}</span>
+              </div>
+              <div v-if="selectedOrder.voucher" class="flex justify-between items-center text-sm text-green-600">
+                <span>Giảm giá:</span>
+                <span>-{{ formatPrice(calculateDiscountValue(selectedOrder)) }}</span>
+              </div>
               <div class="flex justify-between items-center text-lg font-bold">
                 <span>Tổng cộng:</span>
                 <span class="text-blue-600">{{ formatPrice(selectedOrder.total_price) }}</span>

@@ -103,7 +103,7 @@ const goTo = (path: string) => {
           <span
             class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
           >
-            GroupUp
+            GlowUp
           </span>
           <div class="text-[10px] text-gray-400 -mt-1">Admin Portal</div>
         </div>
@@ -192,7 +192,7 @@ const goTo = (path: string) => {
     <!-- Footer -->
     <div class="p-4 border-t border-blue-800/30 bg-blue-900/10">
       <div class="text-center">
-        <div class="text-xs text-gray-400">© 2025 GroupUp</div>
+        <div class="text-xs text-gray-400">© 2026 GlowUp</div>
         <div class="text-[10px] text-gray-500 mt-1">
           Medical Appointment System
         </div>
