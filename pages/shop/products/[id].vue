@@ -8,11 +8,13 @@ import RelatedProducts from "@/components/product/RelatedProducts.vue";
 import { useNotification } from "@/composables/useNotification";
 import { useAuth } from "@/composables/useAuth";
 import { useCart } from "@/composables/useCart";
+import { productApi } from "@/composables/useProduct";
 
 const route = useRoute();
 const { isAuthenticated } = useAuth();
 const { showNotification } = useNotification();
 const { addToCart } = useCart();
+const { getProductById, getRelatedProducts } = productApi();
 
 // State
 const product = ref<any>(null);
@@ -21,11 +23,12 @@ const reviews = ref<any[]>([]);
 const selectedImage = ref("");
 const quantity = ref(1);
 const loading = ref(true);
+const loadingRelated = ref(true);
 const addingToCart = ref(false);
 
 const IMAGE_BASE_URL = "http://localhost:8081/uploads/products";
 
-// Mock data
+// Mock data cho reviews
 const mockReviews = [
   {
     id: 1,
@@ -53,37 +56,6 @@ const mockReviews = [
   },
 ];
 
-const mockRelated = [
-  {
-    id: 101,
-    name: "Serum Vitamin C",
-    brand: "Balance",
-    price: 150000,
-    image: "https://placehold.co/300x400?text=Serum",
-  },
-  {
-    id: 102,
-    name: "Kem Dưỡng Ẩm",
-    brand: "Neutrogena",
-    price: 280000,
-    image: "https://placehold.co/300x400?text=Cream",
-  },
-  {
-    id: 103,
-    name: "Son Môi Matte",
-    brand: "MAC",
-    price: 550000,
-    image: "https://placehold.co/300x400?text=Lipstick",
-  },
-  {
-    id: 104,
-    name: "Nước Tẩy Trang",
-    brand: "Bioderma",
-    price: 320000,
-    image: "https://placehold.co/300x400?text=Cleanser",
-  },
-];
-
 const newReview = ref({
   user: "Khách hàng",
   rating: 5,
@@ -97,6 +69,7 @@ const handleAddToCart = async () => {
     return;
   }
   if (!product.value) return;
+  
   addingToCart.value = true;
   try {
     await addToCart(product.value.id, quantity.value);
@@ -114,21 +87,69 @@ const handleSubmitReview = () => {
   showNotification("Cảm ơn", "Đánh giá của bạn đã được ghi nhận!", "success");
 };
 
-// API call
-onMounted(async () => {
+// Load product và related products
+const loadProductData = async () => {
   try {
-    const res: any = await $fetch(
-      `http://localhost:8081/api/products/${route.params.id}`
-    );
-    product.value = res;
-    if (res.images && res.images.length > 0)
-      selectedImage.value = res.images[0];
+    loading.value = true;
+    
+    // Load product details
+    const orderId = route.params.id as string
+
+    const productData = await getProductById(orderId);
+    product.value = productData;
+    
+    // Set selected image
+    if (productData.images && productData.images.length > 0) {
+      selectedImage.value = productData.images[0];
+    }
+    
+    // Set reviews
     reviews.value = mockReviews;
-    relatedProducts.value = mockRelated;
+    
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error loading product:", error);
+    showNotification("Lỗi", "Không thể tải thông tin sản phẩm", "error");
   } finally {
     loading.value = false;
+  }
+};
+
+const loadRelatedProducts = async () => {
+  try {
+    loadingRelated.value = true;
+    const orderId = route.params.id as string
+
+    // Lấy 4 sản phẩm liên quan
+    const related = await getRelatedProducts(orderId, 4);
+    relatedProducts.value = related;
+    
+  } catch (error) {
+    console.error("Error loading related products:", error);
+    // Không hiển thị notification cho lỗi này vì không quan trọng
+  } finally {
+    loadingRelated.value = false;
+  }
+};
+
+// Mounted
+onMounted(async () => {
+  await loadProductData();
+  await loadRelatedProducts();
+});
+
+// Watch route changes (khi user click vào related product)
+watch(() => route.params.id, async (newId) => {
+  if (newId) {
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Reset state
+    quantity.value = 1;
+    selectedImage.value = "";
+    
+    // Reload data
+    await loadProductData();
+    await loadRelatedProducts();
   }
 });
 </script>
@@ -177,10 +198,31 @@ onMounted(async () => {
       />
 
       <!-- Related Products -->
+      <div v-if="loadingRelated" class="mt-20">
+        <h2 class="font-serif text-3xl text-gray-900 text-center mb-10">Sản Phẩm Tương Tự</h2>
+        <div class="flex justify-center py-12">
+          <div class="w-8 h-8 border-4 border-gray-200 border-t-glow-primary-600 rounded-full animate-spin"></div>
+        </div>
+      </div>
+      
       <RelatedProducts 
+        v-else-if="relatedProducts.length > 0"
         :products="relatedProducts"
         :imageBaseUrl="IMAGE_BASE_URL"
       />
+    </div>
+
+    <!-- Error State -->
+    <div v-else class="container mx-auto px-4 py-32 text-center">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy sản phẩm</h2>
+      <p class="text-gray-600 mb-6">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+      <NuxtLink 
+        to="/shop"
+        class="inline-block px-6 py-3 bg-glow-primary-600 text-white font-bold rounded-xl hover:bg-glow-primary-700 transition-colors"
+      >
+        Quay lại cửa hàng
+      </NuxtLink>
     </div>
   </div>
 </template>
